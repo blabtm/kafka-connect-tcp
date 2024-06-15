@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.blab'
+version = '0.0.1'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    kafkaConnectApiVersion = '3.7.0'
+    log4jVersion = '2.23.1'
+    jUnitVersion = '5.10.2'
+}
+
+dependencies {
+    implementation "org.apache.kafka:connect-api:$kafkaConnectApiVersion"
+
+    implementation "org.apache.logging.log4j:log4j-core:$log4jVersion"
+    implementation "org.apache.logging.log4j:log4j-api:$log4jVersion"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$jUnitVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:$jUnitVersion"
+}
+
+test {
+    useJUnitPlatform()
+}

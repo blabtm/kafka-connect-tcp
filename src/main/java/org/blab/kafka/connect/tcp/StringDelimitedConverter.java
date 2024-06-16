@@ -18,11 +18,13 @@ public class StringDelimitedConverter implements MessageConverter {
     if (!map.containsKey("name")) throw new IllegalArgumentException();
     if (map.keySet().size() == 1) throw new IllegalArgumentException();
 
-    JSONObject object = new JSONObject();
+    var object = new JSONObject();
+    var topic = convertTopic(map.get("name"));
+
     map.forEach((key, value) -> object.put(key, JSONObject.stringToValue(value)));
 
     return new SourceRecord(
-        null, null, convertTopic(map.get("name")), Schema.STRING_SCHEMA, object.toString());
+        null, null, topic, Schema.STRING_SCHEMA, topic, Schema.STRING_SCHEMA, object.toString());
   }
 
   private String convertTopic(String topic) {

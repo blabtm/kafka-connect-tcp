@@ -6,9 +6,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface MessageChannel extends Closeable {
-  int MAX_MESSAGE_LENGTH_DEFAULT = 2048;
-
-  CompletableFuture<Void> connect(InetSocketAddress remote);
+  CompletableFuture<InetSocketAddress> connect(InetSocketAddress remote);
 
   /**
    * Read a sequence of bytes from the channel.

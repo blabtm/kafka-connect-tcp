@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'org.blab'
-version = '1.0.0'
+version = '0.0.1'
 
 repositories {
     mavenCentral()
@@ -17,6 +17,7 @@ ext {
 
 dependencies {
     implementation "org.apache.kafka:connect-api:$kafkaConnectApiVersion"
+    implementation 'org.json:json:20240303'
 
     implementation "org.apache.logging.log4j:log4j-core:$log4jVersion"
     implementation "org.apache.logging.log4j:log4j-api:$log4jVersion"

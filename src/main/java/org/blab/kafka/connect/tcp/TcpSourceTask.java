@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -19,10 +21,11 @@ public class TcpSourceTask extends SourceTask {
   private final BlockingQueue<SourceRecord> queue = new LinkedBlockingQueue<>();
   private MessageChannel channel;
   private MessageConverter converter;
+  private TcpSourceConfiguration configuration;
 
   @Override
   public void start(Map<String, String> map) {
-    var configuration = new TcpSourceConfiguration(map);
+    configuration = new TcpSourceConfiguration(map);
 
     try {
       converter =
@@ -41,24 +44,37 @@ public class TcpSourceTask extends SourceTask {
           .connect(
               new InetSocketAddress(
                   configuration.getString("remote.host"), configuration.getInt("remote.port")))
-          .whenCompleteAsync(
-              (result, error) -> {
-                if (error != null) logger.error(error);
-                else {
-                  configuration
-                      .getList("remote.topics")
-                      .forEach(
-                          t ->
-                              channel.write(
-                                  String.format(configuration.getString("remote.cmd.subscribe"), t)
-                                      .getBytes()));
-
-                  channel.read().whenCompleteAsync(this::onMessage);
-                }
-              });
+          .whenCompleteAsync(this::onConnected);
 
     } catch (Exception e) {
       throw new ConnectException(e);
+    }
+  }
+
+  private void onConnected(InetSocketAddress result, Throwable error) {
+    if (error != null) {
+      logger.error(error);
+
+      new Timer(true)
+          .schedule(
+              new TimerTask() {
+                @Override
+                public void run() {
+                  logger.info("Reconnecting...");
+                  channel.connect(result).whenCompleteAsync(TcpSourceTask.this::onConnected);
+                }
+              },
+              configuration.getLong("remote.reconnect.timeout.ms"));
+    } else {
+      configuration
+          .getList("remote.topics")
+          .forEach(
+              t ->
+                  channel.write(
+                      String.format(configuration.getString("remote.cmd.subscribe"), t)
+                          .getBytes()));
+
+      channel.read().whenCompleteAsync(this::onMessage);
     }
   }
 

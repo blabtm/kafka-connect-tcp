@@ -40,7 +40,7 @@ public class TcpSourceConfiguration extends AbstractConfig {
               "remote.port", ConfigDef.Type.INT, ConfigDef.Importance.HIGH, "Remote service port")
           .define(
               "remote.reconnect.timeout.ms",
-              ConfigDef.Type.INT,
+              ConfigDef.Type.LONG,
               30000,
               ConfigDef.Importance.HIGH,
               "Remote service reconnect attempt timeout")

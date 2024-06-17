@@ -25,6 +25,8 @@ public class TcpSourceTask extends SourceTask {
 
   @Override
   public void start(Map<String, String> map) {
+    logger.info("Starting...");
+
     configuration = new TcpSourceConfiguration(map);
 
     try {
@@ -47,46 +49,54 @@ public class TcpSourceTask extends SourceTask {
           .whenCompleteAsync(this::onConnected);
 
     } catch (Exception e) {
+      logger.fatal(e);
       throw new ConnectException(e);
     }
   }
 
   private void onConnected(InetSocketAddress result, Throwable error) {
     if (error != null) {
-      logger.error(error);
+      logger.error("Failed to connect to remote server: {}", result, error);
 
       new Timer(true)
           .schedule(
               new TimerTask() {
                 @Override
                 public void run() {
-                  logger.info("Reconnecting...");
+                  logger.info("Trying to reconnect...");
                   channel.connect(result).whenCompleteAsync(TcpSourceTask.this::onConnected);
                 }
               },
               configuration.getLong("remote.reconnect.timeout.ms"));
     } else {
+      logger.info("Successfully connected to remote server: {}", result);
       configuration
           .getList("remote.topics")
           .forEach(
               t ->
-                  channel.write(
-                      String.format(configuration.getString("remote.cmd.subscribe"), t)
-                          .getBytes()));
+                  channel
+                      .write(
+                          String.format(configuration.getString("remote.cmd.subscribe"), t)
+                              .getBytes())
+                      .whenCompleteAsync(
+                          (r, e) -> {
+                            if (e != null) logger.error("Error writing to remote server.", e);
+                            else logger.info("Message written to remote server.");
+                          }));
 
       channel.read().whenCompleteAsync(this::onMessage);
     }
   }
 
   private void onMessage(List<byte[]> result, Throwable error) {
-    if (error != null) logger.error(error);
+    if (error != null) logger.error("Error reading from remote server.", error);
     else
       result.forEach(
           b -> {
             try {
               queue.add(converter.convert(b));
             } catch (IllegalArgumentException e) {
-              logger.error(e);
+              logger.error("Failed converting message.", e);
             }
           });
 
@@ -101,7 +111,7 @@ public class TcpSourceTask extends SourceTask {
   @Override
   public void stop() {
     try {
-      channel.close();
+      if (channel != null) channel.close();
     } catch (IOException e) {
       logger.error(e);
     }

@@ -15,8 +15,11 @@ public class StringDelimitedConverter implements MessageConverter {
             .map(s -> s.split(":"))
             .collect(Collectors.toMap(s -> s[0], s -> s[1]));
 
-    if (!map.containsKey("name")) throw new IllegalArgumentException();
-    if (map.keySet().size() == 1) throw new IllegalArgumentException();
+    if (!map.containsKey("name"))
+      throw new IllegalArgumentException(
+          "Required field missed: \"name\", message: " + new String(message));
+    if (map.keySet().size() == 1)
+      throw new IllegalArgumentException("Empty message: " + new String(message));
 
     var object = new JSONObject();
     var topic = convertTopic(map.get("name"));

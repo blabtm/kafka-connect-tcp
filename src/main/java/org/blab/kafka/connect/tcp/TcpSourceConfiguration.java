@@ -11,45 +11,50 @@ public class TcpSourceConfiguration extends AbstractConfig {
           .define(
               "converter.class",
               ConfigDef.Type.STRING,
-              "org.blab.kafka.connect.tcp.StringDelimiterConverter",
+              "org.blab.kafka.connect.tcp.StringDelimitedConverter",
               ConfigDef.Importance.HIGH,
-              "Specific Json converter class")
+              "Message specific JSON converter class.")
           .define(
-              "message.size.max",
+              "message.size.max.bytes",
               ConfigDef.Type.INT,
               2048,
-              ConfigDef.Importance.HIGH,
-              "Message size limit")
+              ConfigDef.Importance.MEDIUM,
+              "Message size limit in bytes.")
           .define(
               "message.breaker",
               ConfigDef.Type.INT,
-              (int) '\n',
+              10,
               ConfigDef.Importance.HIGH,
-              "Unsigned ASCII code for message breaker.")
+              "Unsigned ASCII message breaker code.")
           .define(
               "remote.topics",
-              ConfigDef.Type.STRING,
+              ConfigDef.Type.LIST,
               ConfigDef.Importance.HIGH,
-              "List of topic to listen")
+              "List of targeted topics.")
           .define(
               "remote.host",
               ConfigDef.Type.STRING,
+              "localhost",
               ConfigDef.Importance.HIGH,
-              "Remote service hostname")
+              "Target service hostname.")
           .define(
-              "remote.port", ConfigDef.Type.INT, ConfigDef.Importance.HIGH, "Remote service port")
+              "remote.port",
+              ConfigDef.Type.INT,
+              8080,
+              ConfigDef.Importance.HIGH,
+              "Target service port.")
           .define(
               "remote.reconnect.timeout.ms",
               ConfigDef.Type.LONG,
-              30000,
-              ConfigDef.Importance.HIGH,
-              "Remote service reconnect attempt timeout")
+              30000L,
+              ConfigDef.Importance.LOW,
+              "Failover reconnect timeout.")
           .define(
               "remote.cmd.subscribe",
               ConfigDef.Type.STRING,
               "name:%s|method:subscr\n",
               ConfigDef.Importance.HIGH,
-              "Command pattern used to subscribe for a topic");
+              "Subscription command pattern.");
 
   public TcpSourceConfiguration(Map<?, ?> originals) {
     super(CONFIG_DEF, originals);

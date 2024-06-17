@@ -38,6 +38,8 @@ public class AsynchronousMessageChannel implements MessageChannel {
 
   @Override
   public CompletableFuture<InetSocketAddress> connect(InetSocketAddress remote) {
+    logger.info("Connecting to {}", remote);
+
     var future = new CompletableFuture<InetSocketAddress>();
 
     socketChannel.connect(
@@ -46,6 +48,7 @@ public class AsynchronousMessageChannel implements MessageChannel {
         new CompletionHandler<>() {
           @Override
           public void completed(Void unused, InetSocketAddress remote) {
+            logger.info("Connected to {}", remote);
             future.complete(remote);
           }
 
@@ -93,6 +96,8 @@ public class AsynchronousMessageChannel implements MessageChannel {
 
   @Override
   public CompletableFuture<Integer> write(byte[] message) {
+    logger.debug("Writing: {}", new String(message));
+
     var task = new Task(message, new CompletableFuture<>());
 
     tasks.add(task);
@@ -103,6 +108,7 @@ public class AsynchronousMessageChannel implements MessageChannel {
           new CompletionHandler<>() {
             @Override
             public void completed(Integer size, Task task) {
+              logger.debug("Message written: {}", new String(task.message));
               task.future.complete(size);
               next();
             }
@@ -129,10 +135,13 @@ public class AsynchronousMessageChannel implements MessageChannel {
     try {
       socketChannel.close();
     } catch (Exception e) {
-      logger.info(e);
+      logger.warn(e);
     }
 
-    tasks.forEach(t -> t.future.completeExceptionally(new CancellationException("Cancelled.")));
+    tasks.forEach(
+        t ->
+            t.future.completeExceptionally(
+                new CancellationException("Cancelled due interruption.")));
   }
 
   record Task(byte[] message, CompletableFuture<Integer> future) {}

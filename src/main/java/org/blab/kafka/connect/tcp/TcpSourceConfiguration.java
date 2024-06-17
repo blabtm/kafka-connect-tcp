@@ -23,7 +23,7 @@ public class TcpSourceConfiguration extends AbstractConfig {
           .define(
               "message.breaker",
               ConfigDef.Type.INT,
-              (byte) '\n',
+              (int) '\n',
               ConfigDef.Importance.HIGH,
               "Unsigned ASCII code for message breaker.")
           .define(

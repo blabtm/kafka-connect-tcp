@@ -1,0 +1,15 @@
+POST http://localhost:8083/connectors
+Content-Type: application/json
+
+{
+  "name": "tcp-source-connector",
+  "config": {
+    "connector.class": "org.blab.kafka.connect.tcp.TcpSourceConnector",
+    "tasks.max": 1,
+    "message.breaker": 10,
+    "remote.topics": "VEPP/CCD/1M1L/sigma_x",
+    "remote.host": "172.16.1.110",
+    "remote.port": 20041,
+    "remote.reconnect.timeout.ms": 5000
+  }
+}

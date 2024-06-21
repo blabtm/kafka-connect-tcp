@@ -20,7 +20,6 @@ public class AsynchronousMessageChannel implements MessageChannel {
   private static final Logger logger = LogManager.getLogger(AsynchronousMessageChannel.class);
 
   private final BlockingQueue<Task> tasks = new LinkedBlockingQueue<>();
-  private final Lock readLock = new ReentrantLock();
   private final Lock writeLock = new ReentrantLock();
 
   private final AsynchronousSocketChannel socketChannel;

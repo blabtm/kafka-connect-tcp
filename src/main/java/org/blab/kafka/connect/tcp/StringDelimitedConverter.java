@@ -1,15 +1,18 @@
 package org.blab.kafka.connect.tcp;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.source.SourceRecord;
 import org.json.JSONObject;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class StringDelimitedConverter implements MessageConverter {
+  public static final String TIME_FMT = "DD.MM.YYYY HH_mm_ss.SSS";
+
   @Override
-  public SourceRecord convert(byte[] message) {
+  public Map.Entry<String, byte[]> convert(byte[] message) {
     var map =
         Arrays.stream(new String(message).split("\\|"))
             .map(s -> s.split(":"))
@@ -18,19 +21,42 @@ public class StringDelimitedConverter implements MessageConverter {
     if (!map.containsKey("name"))
       throw new IllegalArgumentException(
           "Required field missed: \"name\", message: " + new String(message));
-    if (map.keySet().size() == 1)
-      throw new IllegalArgumentException("Empty message: " + new String(message));
 
+    return Map.entry(convertTopic(map.get("name")), toJson(map).toString().getBytes());
+  }
+
+  private JSONObject toJson(Map<String, String> pure) {
     var object = new JSONObject();
-    var topic = convertTopic(map.get("name"));
 
-    map.forEach((key, value) -> object.put(key, JSONObject.stringToValue(value)));
+    pure.forEach(
+        (key, value) -> {
+          switch (key) {
+            case "name":
+              break;
+            case "time":
+              object.put("timestamp", convertTimestamp(value));
+              break;
+            case "val":
+              object.put("value", JSONObject.stringToValue(value));
+              break;
+            default:
+              object.put(key, JSONObject.stringToValue(value));
+              break;
+          }
+        });
 
-    return new SourceRecord(
-        null, null, topic, Schema.STRING_SCHEMA, topic, Schema.STRING_SCHEMA, object.toString());
+    return object;
   }
 
   private String convertTopic(String topic) {
-    return topic.replace("/", ".");
+    return topic.replace("/", ".").toLowerCase().trim();
+  }
+
+  private Long convertTimestamp(String time) {
+    try {
+      return new SimpleDateFormat(TIME_FMT).parse(time).getTime();
+    } catch (ParseException e) {
+      throw new IllegalArgumentException(e);
+    }
   }
 }

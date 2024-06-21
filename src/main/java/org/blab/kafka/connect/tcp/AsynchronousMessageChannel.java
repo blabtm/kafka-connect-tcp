@@ -64,8 +64,6 @@ public class AsynchronousMessageChannel implements MessageChannel {
 
   @Override
   public CompletableFuture<List<byte[]>> read() {
-    readLock.lock();
-
     var future = new CompletableFuture<List<byte[]>>();
 
     socketChannel.read(
@@ -77,17 +75,13 @@ public class AsynchronousMessageChannel implements MessageChannel {
             List<byte[]> r = buffer.commit();
 
             if (r.isEmpty()) socketChannel.read(buffer.extern(), null, this);
-            else {
-              future.complete(r);
-              readLock.unlock();
-            }
+            else future.complete(r);
           }
 
           @Override
           public void failed(Throwable t, Void a) {
             logger.error(t);
             future.completeExceptionally(t);
-            readLock.unlock();
           }
         });
 

@@ -1,5 +1,6 @@
 package org.blab.kafka.connect.tcp;
 
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -94,13 +95,24 @@ public class TcpSourceTask extends SourceTask {
       result.forEach(
           b -> {
             try {
-              queue.add(converter.convert(b));
+              queue.add(toSourceRecord(converter.convert(b)));
             } catch (IllegalArgumentException e) {
               logger.error("Failed converting message.", e);
             }
           });
 
     channel.read().whenCompleteAsync(this::onMessage);
+  }
+
+  private SourceRecord toSourceRecord(Map.Entry<String, byte[]> message) {
+    return new SourceRecord(
+        null,
+        null,
+        message.getKey(),
+        Schema.STRING_SCHEMA,
+        message.getKey(),
+        Schema.BYTES_SCHEMA,
+        message.getValue());
   }
 
   @Override
